@@ -65,6 +65,8 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
     protected YggdrasilMinecraftSessionService(final YggdrasilAuthenticationService service, final Environment env) {
         super(service);
 
+        LOGGER.info("Aurora authlib loaded!");
+
         baseUrl = env.getSessionHost() + "/session/minecraft/";
 
         joinUrl = HttpAuthenticationService.constantURL(baseUrl + "join");
@@ -131,6 +133,8 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
             return new HashMap<MinecraftProfileTexture.Type, MinecraftProfileTexture>();
         }
 
+        // TODO: Попожа суну сертификат
+        /*
         if (requireSecure) {
             if (!textureProperty.hasSignature()) {
                 LOGGER.error("Signature is missing from textures payload");
@@ -142,6 +146,7 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
                 throw new InsecureTextureException("Textures payload has been tampered with (signature invalid)");
             }
         }
+         */
 
         final MinecraftTexturesPayload result;
         try {
