@@ -1,43 +1,50 @@
 package com.mojang.authlib.minecraft;
 
-import java.util.Map;
-import javax.annotation.Nullable;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import javax.annotation.Nullable;
+import java.util.Map;
+
 public class MinecraftProfileTexture {
-   public static final int PROFILE_TEXTURE_COUNT = MinecraftProfileTexture.Type.values().length;
-   private final String url;
-   private final Map<String, String> metadata;
+    public enum Type {
+        SKIN,
+        CAPE,
+        ELYTRA
+        ;
+    }
 
-   public MinecraftProfileTexture(String url, Map<String, String> metadata) {
-      this.url = url;
-      this.metadata = metadata;
-   }
+    public static final int PROFILE_TEXTURE_COUNT = Type.values().length;
 
-   public String getUrl() {
-      return this.url;
-   }
+    private final String url;
+    private final Map<String, String> metadata;
 
-   @Nullable
-   public String getMetadata(String key) {
-      return this.metadata == null ? null : (String)this.metadata.get(key);
-   }
+    public MinecraftProfileTexture(final String url, final Map<String, String> metadata) {
+        this.url = url;
+        this.metadata = metadata;
+    }
 
-   public String getHash() {
-      return FilenameUtils.getBaseName(this.url);
-   }
+    public String getUrl() {
+        return url;
+    }
 
-   public String toString() {
-      return (new ToStringBuilder(this)).append("url", this.url).append("hash", this.getHash()).toString();
-   }
+    @Nullable
+    public String getMetadata(final String key) {
+        if (metadata == null) {
+            return null;
+        }
+        return metadata.get(key);
+    }
 
-   public static enum Type {
-      SKIN,
-      CAPE,
-      ELYTRA;
+    public String getHash() {
+        return FilenameUtils.getBaseName(url);
+    }
 
-      private Type() {
-      }
-   }
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+            .append("url", url)
+            .append("hash", getHash())
+            .toString();
+    }
 }

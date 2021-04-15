@@ -1,79 +1,116 @@
 package com.mojang.authlib;
 
 import com.mojang.authlib.properties.PropertyMap;
-import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.UUID;
+
 public class GameProfile {
-   private final UUID id;
-   private final String name;
-   private final PropertyMap properties = new PropertyMap();
-   private boolean legacy;
+    private final UUID id;
+    private final String name;
+    private final PropertyMap properties = new PropertyMap();
+    private boolean legacy;
 
-   public GameProfile(UUID id, String name) {
-      if (id == null && StringUtils.isBlank(name)) {
-         throw new IllegalArgumentException("Name and ID cannot both be blank");
-      } else {
-         this.id = id;
-         this.name = name;
-      }
-   }
+    /**
+     * Constructs a new Game Profile with the specified ID and name.
+     * <p />
+     * Either ID or name may be null/empty, but at least one must be filled.
+     *
+     * @param id Unique ID of the profile
+     * @param name Display name of the profile
+     * @throws java.lang.IllegalArgumentException Both ID and name are either null or empty
+     */
+    public GameProfile(final UUID id, final String name) {
+        if (id == null && StringUtils.isBlank(name)) {
+            throw new IllegalArgumentException("Name and ID cannot both be blank");
+        }
 
-   public UUID getId() {
-      return this.id;
-   }
+        this.id = id;
+        this.name = name;
+    }
 
-   public String getName() {
-      return this.name;
-   }
+    /**
+     * Gets the unique ID of this game profile.
+     * <p />
+     * This may be null for partial profile data if constructed manually.
+     *
+     * @return ID of the profile
+     */
+    public UUID getId() {
+        return id;
+    }
 
-   public PropertyMap getProperties() {
-      return this.properties;
-   }
+    /**
+     * Gets the display name of this game profile.
+     * <p />
+     * This may be null for partial profile data if constructed manually.
+     *
+     * @return Name of the profile
+     */
+    public String getName() {
+        return name;
+    }
 
-   public boolean isComplete() {
-      return this.id != null && StringUtils.isNotBlank(this.getName());
-   }
+    /**
+     * Returns any known properties about this game profile.
+     *
+     * @return Modifiable map of profile properties.
+     */
+    public PropertyMap getProperties() {
+        return properties;
+    }
 
-   public boolean equals(Object o) {
-      if (this == o) {
-         return true;
-      } else if (o != null && this.getClass() == o.getClass()) {
-         GameProfile that = (GameProfile)o;
-         if (this.id != null) {
-            if (!this.id.equals(that.id)) {
-               return false;
-            }
-         } else if (that.id != null) {
-            return false;
-         }
+    /**
+     * Checks if this profile is complete.
+     * <p />
+     * A complete profile has no empty fields. Partial profiles may be constructed manually and used as input to methods.
+     *
+     * @return True if this profile is complete (as opposed to partial)
+     */
+    public boolean isComplete() {
+        return id != null && StringUtils.isNotBlank(getName());
+    }
 
-         if (this.name != null) {
-            if (this.name.equals(that.name)) {
-               return true;
-            }
-         } else if (that.name == null) {
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
             return true;
-         }
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
-         return false;
-      } else {
-         return false;
-      }
-   }
+        final GameProfile that = (GameProfile) o;
 
-   public int hashCode() {
-      int result = this.id != null ? this.id.hashCode() : 0;
-      result = 31 * result + (this.name != null ? this.name.hashCode() : 0);
-      return result;
-   }
+        if (id != null ? !id.equals(that.id) : that.id != null) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
 
-   public String toString() {
-      return (new ToStringBuilder(this)).append("id", this.id).append("name", this.name).append("properties", this.properties).append("legacy", this.legacy).toString();
-   }
+        return true;
+    }
 
-   public boolean isLegacy() {
-      return this.legacy;
-   }
+    @Override
+    public int hashCode() {
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+            .append("id", id)
+            .append("name", name)
+            .append("properties", properties)
+            .append("legacy", legacy)
+            .toString();
+    }
+
+    public boolean isLegacy() {
+        return legacy;
+    }
 }

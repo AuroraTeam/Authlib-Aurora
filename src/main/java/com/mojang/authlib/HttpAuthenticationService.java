@@ -1,5 +1,12 @@
 package com.mojang.authlib;
 
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.Validate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,184 +16,219 @@ import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import javax.annotation.Nullable;
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.Validate;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public abstract class HttpAuthenticationService extends BaseAuthenticationService {
-   private static final Logger LOGGER = LogManager.getLogger();
-   private final Proxy proxy;
+    private static final Logger LOGGER = LogManager.getLogger();
 
-   protected HttpAuthenticationService(Proxy proxy) {
-      Validate.notNull(proxy);
-      this.proxy = proxy;
-   }
+    private final Proxy proxy;
 
-   public Proxy getProxy() {
-      return this.proxy;
-   }
+    protected HttpAuthenticationService(final Proxy proxy) {
+        Validate.notNull(proxy);
+        this.proxy = proxy;
+    }
 
-   protected HttpURLConnection createUrlConnection(URL url) throws IOException {
-      Validate.notNull(url);
-      LOGGER.debug("Opening connection to " + url);
-      HttpURLConnection connection = (HttpURLConnection)url.openConnection(this.proxy);
-      connection.setConnectTimeout(15000);
-      connection.setReadTimeout(15000);
-      connection.setUseCaches(false);
-      return connection;
-   }
+    /**
+     * Gets the proxy to be used with every HTTP(S) request.
+     *
+     * @return Proxy to be used.
+     */
+    public Proxy getProxy() {
+        return proxy;
+    }
 
-   public String performPostRequest(URL url, String post, String contentType) throws IOException {
-      Validate.notNull(url);
-      Validate.notNull(post);
-      Validate.notNull(contentType);
-      HttpURLConnection connection = this.createUrlConnection(url);
-      byte[] postAsBytes = post.getBytes(Charsets.UTF_8);
-      connection.setRequestProperty("Content-Type", contentType + "; charset=utf-8");
-      connection.setRequestProperty("Content-Length", "" + postAsBytes.length);
-      connection.setDoOutput(true);
-      LOGGER.debug("Writing POST data to " + url + ": " + post);
-      OutputStream outputStream = null;
+    protected HttpURLConnection createUrlConnection(final URL url) throws IOException {
+        Validate.notNull(url);
+        LOGGER.debug("Opening connection to " + url);
+        final HttpURLConnection connection = (HttpURLConnection) url.openConnection(proxy);
+        connection.setConnectTimeout(15000);
+        connection.setReadTimeout(15000);
+        connection.setUseCaches(false);
+        return connection;
+    }
 
-      try {
-         outputStream = connection.getOutputStream();
-         IOUtils.write(postAsBytes, outputStream);
-      } finally {
-         IOUtils.closeQuietly(outputStream);
-      }
+    /**
+     * Performs a POST request to the specified URL and returns the result.
+     * <p />
+     * The POST data will be encoded in UTF-8 as the specified contentType. The response will be parsed as UTF-8.
+     * If the server returns an error but still provides a body, the body will be returned as normal.
+     * If the server returns an error without any body, a relevant {@link java.io.IOException} will be thrown.
+     *
+     * @param url URL to submit the POST request to
+     * @param post POST data in the correct format to be submitted
+     * @param contentType Content type of the POST data
+     * @return Raw text response from the server
+     * @throws IOException The request was not successful
+     */
+    public String performPostRequest(final URL url, final String post, final String contentType) throws IOException {
+        Validate.notNull(url);
+        Validate.notNull(post);
+        Validate.notNull(contentType);
+        final HttpURLConnection connection = createUrlConnection(url);
+        final byte[] postAsBytes = post.getBytes(Charsets.UTF_8);
 
-      LOGGER.debug("Reading data from " + url);
-      InputStream inputStream = null;
+        connection.setRequestProperty("Content-Type", contentType + "; charset=utf-8");
+        connection.setRequestProperty("Content-Length", "" + postAsBytes.length);
+        connection.setDoOutput(true);
 
-      String var10;
-      try {
-         String result;
-         try {
+        LOGGER.debug("Writing POST data to " + url + ": " + post);
+
+        OutputStream outputStream = null;
+        try {
+            outputStream = connection.getOutputStream();
+            IOUtils.write(postAsBytes, outputStream);
+        } finally {
+            IOUtils.closeQuietly(outputStream);
+        }
+
+        LOGGER.debug("Reading data from " + url);
+
+        InputStream inputStream = null;
+        try {
             inputStream = connection.getInputStream();
-            result = IOUtils.toString(inputStream, Charsets.UTF_8);
+            final String result = IOUtils.toString(inputStream, Charsets.UTF_8);
             LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
             LOGGER.debug("Response: " + result);
-            result = result;
             return result;
-         } catch (IOException var19) {
+        } catch (final IOException e) {
             IOUtils.closeQuietly(inputStream);
             inputStream = connection.getErrorStream();
-            if (inputStream == null) {
-               LOGGER.debug("Request failed", var19);
-               throw var19;
+
+            if (inputStream != null) {
+                LOGGER.debug("Reading error page from " + url);
+                final String result = IOUtils.toString(inputStream, Charsets.UTF_8);
+                LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
+                LOGGER.debug("Response: " + result);
+                return result;
+            } else {
+                LOGGER.debug("Request failed", e);
+                throw e;
             }
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
+    }
 
-            LOGGER.debug("Reading error page from " + url);
-            result = IOUtils.toString(inputStream, Charsets.UTF_8);
-            LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
-            LOGGER.debug("Response: " + result);
-            var10 = result;
-         }
-      } finally {
-         IOUtils.closeQuietly(inputStream);
-      }
+    public String performGetRequest(final URL url) throws IOException {
+        return performGetRequest(url, null);
+    }
 
-      return var10;
-   }
+    /**
+     * Performs a GET request to the specified URL and returns the result.
+     * <p />
+     * The response will be parsed as UTF-8.
+     * If the server returns an error but still provides a body, the body will be returned as normal.
+     * If the server returns an error without any body, a relevant {@link java.io.IOException} will be thrown.
+     *
+     * @param url URL to submit the GET request to
+     * @param authentication The authentication to provide, if any
+     * @return Raw text response from the server
+     * @throws IOException The request was not successful
+     */
+    public String performGetRequest(final URL url, @Nullable final String authentication) throws IOException {
+        Validate.notNull(url);
+        final HttpURLConnection connection = createUrlConnection(url);
 
-   public String performGetRequest(URL url) throws IOException {
-      return this.performGetRequest(url, (String)null);
-   }
+        if (authentication != null) {
+            connection.setRequestProperty("Authorization", authentication);
+        }
 
-   public String performGetRequest(URL url, @Nullable String authentication) throws IOException {
-      Validate.notNull(url);
-      HttpURLConnection connection = this.createUrlConnection(url);
-      if (authentication != null) {
-         connection.setRequestProperty("Authorization", authentication);
-      }
+        LOGGER.debug("Reading data from " + url);
 
-      LOGGER.debug("Reading data from " + url);
-      InputStream inputStream = null;
-
-      String var7;
-      try {
-         String result;
-         try {
+        InputStream inputStream = null;
+        try {
             inputStream = connection.getInputStream();
-            result = IOUtils.toString(inputStream, Charsets.UTF_8);
+            final String result = IOUtils.toString(inputStream, Charsets.UTF_8);
             LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
             LOGGER.debug("Response: " + result);
-            result = result;
             return result;
-         } catch (IOException var11) {
+        } catch (final IOException e) {
             IOUtils.closeQuietly(inputStream);
             inputStream = connection.getErrorStream();
-            if (inputStream == null) {
-               LOGGER.debug("Request failed", var11);
-               throw var11;
+
+            if (inputStream != null) {
+                LOGGER.debug("Reading error page from " + url);
+                final String result = IOUtils.toString(inputStream, Charsets.UTF_8);
+                LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
+                LOGGER.debug("Response: " + result);
+                return result;
+            } else {
+                LOGGER.debug("Request failed", e);
+                throw e;
             }
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+        }
+    }
 
-            LOGGER.debug("Reading error page from " + url);
-            result = IOUtils.toString(inputStream, Charsets.UTF_8);
-            LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
-            LOGGER.debug("Response: " + result);
-            var7 = result;
-         }
-      } finally {
-         IOUtils.closeQuietly(inputStream);
-      }
+    /**
+     * Creates a {@link URL} with the specified string, throwing an {@link java.lang.Error} if the URL was malformed.
+     * <p />
+     * This is just a wrapper to allow URLs to be created in constants, where you know the URL is valid.
+     *
+     * @param url URL to construct
+     * @return URL constructed
+     */
+    public static URL constantURL(final String url) {
+        try {
+            return new URL(url);
+        } catch (final MalformedURLException ex) {
+            throw new Error("Couldn't create constant for " + url, ex);
+        }
+    }
 
-      return var7;
-   }
+    /**
+     * Turns the specified Map into an encoded & escaped query
+     *
+     * @param query Map to convert into a text based query
+     * @return Resulting query.
+     */
+    public static String buildQuery(final Map<String, Object> query) {
+        if (query == null) {
+            return "";
+        }
+        final StringBuilder builder = new StringBuilder();
 
-   public static URL constantURL(String url) {
-      try {
-         return new URL(url);
-      } catch (MalformedURLException var2) {
-         throw new Error("Couldn't create constant for " + url, var2);
-      }
-   }
-
-   public static String buildQuery(Map<String, Object> query) {
-      if (query == null) {
-         return "";
-      } else {
-         StringBuilder builder = new StringBuilder();
-         Iterator var2 = query.entrySet().iterator();
-
-         while(var2.hasNext()) {
-            Entry<String, Object> entry = (Entry)var2.next();
+        for (final Map.Entry<String, Object> entry : query.entrySet()) {
             if (builder.length() > 0) {
-               builder.append('&');
+                builder.append('&');
             }
 
             try {
-               builder.append(URLEncoder.encode((String)entry.getKey(), "UTF-8"));
-            } catch (UnsupportedEncodingException var6) {
-               LOGGER.error("Unexpected exception building query", var6);
+                builder.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+            } catch (final UnsupportedEncodingException e) {
+                LOGGER.error("Unexpected exception building query", e);
             }
 
             if (entry.getValue() != null) {
-               builder.append('=');
-
-               try {
-                  builder.append(URLEncoder.encode(entry.getValue().toString(), "UTF-8"));
-               } catch (UnsupportedEncodingException var5) {
-                  LOGGER.error("Unexpected exception building query", var5);
-               }
+                builder.append('=');
+                try {
+                    builder.append(URLEncoder.encode(entry.getValue().toString(), "UTF-8"));
+                } catch (final UnsupportedEncodingException e) {
+                    LOGGER.error("Unexpected exception building query", e);
+                }
             }
-         }
+        }
 
-         return builder.toString();
-      }
-   }
+        return builder.toString();
+    }
 
-   public static URL concatenateURL(URL url, String query) {
-      try {
-         return url.getQuery() != null && url.getQuery().length() > 0 ? new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile() + "&" + query) : new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile() + "?" + query);
-      } catch (MalformedURLException var3) {
-         throw new IllegalArgumentException("Could not concatenate given URL with GET arguments!", var3);
-      }
-   }
+    /**
+     * Concatenates the given {@link java.net.URL} and query.
+     *
+     * @param url URL to base off
+     * @param query Query to append to URL
+     * @return URL constructed
+     */
+    public static URL concatenateURL(final URL url, final String query) {
+        try {
+            if (url.getQuery() != null && url.getQuery().length() > 0) {
+                return new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile() + "&" + query);
+            } else {
+                return new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile() + "?" + query);
+            }
+        } catch (final MalformedURLException ex) {
+            throw new IllegalArgumentException("Could not concatenate given URL with GET arguments!", ex);
+        }
+    }
 }

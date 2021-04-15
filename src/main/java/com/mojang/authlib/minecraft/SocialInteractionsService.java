@@ -3,11 +3,33 @@ package com.mojang.authlib.minecraft;
 import java.util.UUID;
 
 public interface SocialInteractionsService {
-   boolean serversAllowed();
 
-   boolean realmsAllowed();
+    /**
+     * Checks if the user is allowed to play on multiplayer servers.
+     *
+     * @return True if the user is allowed to play on multiplayer servers
+     */
+    boolean serversAllowed();
 
-   boolean chatAllowed();
+    /**
+     * Checks if the user is allowed to play on realms.
+     *
+     * @return True if the user is allowed to play on realms
+     */
+    boolean realmsAllowed();
 
-   boolean isBlockedPlayer(UUID var1);
+    /**
+     * Checks if the user is allowed to access chat in online games.
+     *
+     * @return True if the user is allowed to chat
+     */
+    boolean chatAllowed();
+
+    /**
+     * Check if a player is on the block list.
+     *
+     * @param playerID A valid player UUID
+     * @return True if communications from the player should be blocked
+     */
+    boolean isBlockedPlayer(UUID playerID);
 }

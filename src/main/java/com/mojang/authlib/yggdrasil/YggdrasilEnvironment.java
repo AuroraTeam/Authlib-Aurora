@@ -7,48 +7,67 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 public enum YggdrasilEnvironment implements Environment {
-   PROD("https://authserver.mojang.com", "https://api.mojang.com", "https://sessionserver.mojang.com", "https://api.minecraftservices.com"),
-   STAGING("https://yggdrasil-auth-staging.mojang.com", "https://api-staging.mojang.com", "https://yggdrasil-auth-session-staging.mojang.zone", "https://api-staging.minecraftservices.com");
 
-   private final String authHost;
-   private final String accountsHost;
-   private final String sessionHost;
-   private final String servicesHost;
+    PROD(
+        "https://authserver.mojang.com",
+        "https://api.mojang.com",
+        "https://sessionserver.mojang.com",
+        "https://api.minecraftservices.com"
+    ),
+    STAGING(
+        "https://yggdrasil-auth-staging.mojang.com",
+        "https://api-staging.mojang.com",
+        "https://yggdrasil-auth-session-staging.mojang.zone",
+        "https://api-staging.minecraftservices.com"
+    );
 
-   private YggdrasilEnvironment(String authHost, String accountsHost, String sessionHost, String servicesHost) {
-      this.authHost = authHost;
-      this.accountsHost = accountsHost;
-      this.sessionHost = sessionHost;
-      this.servicesHost = servicesHost;
-   }
+    private final String authHost;
+    private final String accountsHost;
+    private final String sessionHost;
+    private final String servicesHost;
 
-   public String getAuthHost() {
-      return this.authHost;
-   }
+    YggdrasilEnvironment(final String authHost, final String accountsHost, final String sessionHost, final String servicesHost) {
+        this.authHost = authHost;
+        this.accountsHost = accountsHost;
+        this.sessionHost = sessionHost;
+        this.servicesHost = servicesHost;
+    }
 
-   public String getAccountsHost() {
-      return this.accountsHost;
-   }
+    public String getAuthHost() {
+        return authHost;
+    }
 
-   public String getSessionHost() {
-      return this.sessionHost;
-   }
+    public String getAccountsHost() {
+        return accountsHost;
+    }
 
-   public String getServicesHost() {
-      return this.servicesHost;
-   }
+    public String getSessionHost() {
+        return sessionHost;
+    }
 
-   public String getName() {
-      return this.name();
-   }
+    public String getServicesHost() {
+        return servicesHost;
+    }
 
-   public String asString() {
-      return (new StringJoiner(", ", "", "")).add("authHost='" + this.authHost + "'").add("accountsHost='" + this.accountsHost + "'").add("sessionHost='" + this.sessionHost + "'").add("servicesHost='" + this.servicesHost + "'").add("name='" + this.getName() + "'").toString();
-   }
+    public String getName() {
+        return this.name();
+    }
 
-   public static Optional<YggdrasilEnvironment> fromString(@Nullable String value) {
-      return Stream.of(values()).filter((env) -> {
-         return value != null && value.equalsIgnoreCase(env.name());
-      }).findFirst();
-   }
+    @Override
+    public String asString() {
+        return new StringJoiner(", ", "", "")
+                   .add("authHost='" + authHost + "'")
+                   .add("accountsHost='" + accountsHost + "'")
+                   .add("sessionHost='" + sessionHost + "'")
+                   .add("servicesHost='" + servicesHost + "'")
+                   .add("name='" + getName() + "'")
+                   .toString();
+    }
+
+    public static Optional<YggdrasilEnvironment> fromString(@Nullable String value) {
+        return Stream
+                   .of(YggdrasilEnvironment.values())
+                   .filter(env -> value != null && value.equalsIgnoreCase(env.name()))
+                   .findFirst();
+    }
 }

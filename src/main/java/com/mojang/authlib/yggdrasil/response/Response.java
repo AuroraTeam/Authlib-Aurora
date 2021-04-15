@@ -1,34 +1,31 @@
 package com.mojang.authlib.yggdrasil.response;
 
 public class Response {
-   private String error;
-   private String errorMessage;
-   private String cause;
+    private String error;
+    private String errorMessage;
+    private String cause;
 
-   public Response() {
-   }
+    public String getError() {
+        return error;
+    }
 
-   public String getError() {
-      return this.error;
-   }
+    public String getCause() {
+        return cause;
+    }
 
-   public String getCause() {
-      return this.cause;
-   }
+    public String getErrorMessage() {
+        return errorMessage;
+    }
 
-   public String getErrorMessage() {
-      return this.errorMessage;
-   }
+    protected void setError(final String error) {
+        this.error = error;
+    }
 
-   protected void setError(String error) {
-      this.error = error;
-   }
+    protected void setErrorMessage(final String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
 
-   protected void setErrorMessage(String errorMessage) {
-      this.errorMessage = errorMessage;
-   }
-
-   protected void setCause(String cause) {
-      this.cause = cause;
-   }
+    protected void setCause(final String cause) {
+        this.cause = cause;
+    }
 }

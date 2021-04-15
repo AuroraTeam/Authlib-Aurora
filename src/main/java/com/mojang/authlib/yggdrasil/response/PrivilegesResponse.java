@@ -1,44 +1,50 @@
 package com.mojang.authlib.yggdrasil.response;
 
 public class PrivilegesResponse extends Response {
-   private PrivilegesResponse.Privileges privileges = new PrivilegesResponse.Privileges();
+/*
+{
+    "privileges": {
+        "onlineChat": {
+            "enabled": true
+        },
+        "multiplayerServer": {
+            "enabled": true
+        },
+        "multiplayerRealms": {
+            "enabled": true
+        }
+    }
+}
+*/
+    private Privileges privileges = new Privileges();
 
-   public PrivilegesResponse() {
-   }
+    public Privileges getPrivileges() {
+        return privileges;
+    }
 
-   public PrivilegesResponse.Privileges getPrivileges() {
-      return this.privileges;
-   }
+    public class Privileges {
+        private Privilege onlineChat = new Privilege();
+        private Privilege multiplayerServer = new Privilege();
+        private Privilege multiplayerRealms = new Privilege();
 
-   public class Privileges {
-      private PrivilegesResponse.Privileges.Privilege onlineChat = new PrivilegesResponse.Privileges.Privilege();
-      private PrivilegesResponse.Privileges.Privilege multiplayerServer = new PrivilegesResponse.Privileges.Privilege();
-      private PrivilegesResponse.Privileges.Privilege multiplayerRealms = new PrivilegesResponse.Privileges.Privilege();
+        public Privilege getOnlineChat() {
+            return onlineChat;
+        }
 
-      public Privileges() {
-      }
+        public Privilege getMultiplayerServer() {
+            return multiplayerServer;
+        }
 
-      public PrivilegesResponse.Privileges.Privilege getOnlineChat() {
-         return this.onlineChat;
-      }
+        public Privilege getMultiplayerRealms() {
+            return multiplayerRealms;
+        }
 
-      public PrivilegesResponse.Privileges.Privilege getMultiplayerServer() {
-         return this.multiplayerServer;
-      }
+        public class Privilege {
+            private boolean enabled;
 
-      public PrivilegesResponse.Privileges.Privilege getMultiplayerRealms() {
-         return this.multiplayerRealms;
-      }
-
-      public class Privilege {
-         private boolean enabled;
-
-         public Privilege() {
-         }
-
-         public boolean isEnabled() {
-            return this.enabled;
-         }
-      }
-   }
+            public boolean isEnabled() {
+                return enabled;
+            }
+        }
+    }
 }

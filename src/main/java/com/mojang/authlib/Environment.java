@@ -3,43 +3,58 @@ package com.mojang.authlib;
 import java.util.StringJoiner;
 
 public interface Environment {
-   String getAuthHost();
 
-   String getAccountsHost();
+    String getAuthHost();
 
-   String getSessionHost();
+    String getAccountsHost();
 
-   String getServicesHost();
+    String getSessionHost();
 
-   String getName();
+    String getServicesHost();
 
-   String asString();
+    String getName();
 
-   static Environment create(final String auth, final String account, final String session, final String services, final String name) {
-      return new Environment() {
-         public String getAuthHost() {
-            return auth;
-         }
+    String asString();
 
-         public String getAccountsHost() {
-            return account;
-         }
+    static Environment create(final String auth, final String account, final String session, final String services, final String name) {
 
-         public String getSessionHost() {
-            return session;
-         }
+        return new Environment() {
+            @Override
+            public String getAuthHost() {
+                return auth;
+            }
 
-         public String getServicesHost() {
-            return services;
-         }
+            @Override
+            public String getAccountsHost() {
+                return account;
+            }
 
-         public String getName() {
-            return name;
-         }
+            @Override
+            public String getSessionHost() {
+                return session;
+            }
 
-         public String asString() {
-            return (new StringJoiner(", ", "", "")).add("authHost='" + this.getAuthHost() + "'").add("accountsHost='" + this.getAccountsHost() + "'").add("sessionHost='" + this.getSessionHost() + "'").add("servicesHost='" + this.getServicesHost() + "'").add("name='" + this.getName() + "'").toString();
-         }
-      };
-   }
+            @Override
+            public String getServicesHost() {
+                return services;
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public String asString() {
+                return new StringJoiner(", ", "", "")
+                           .add("authHost='" + getAuthHost() + "'")
+                           .add("accountsHost='" + getAccountsHost() + "'")
+                           .add("sessionHost='" + getSessionHost() + "'")
+                           .add("servicesHost='" + getServicesHost() + "'")
+                           .add("name='" + getName() + "'")
+                           .toString();
+            }
+        };
+    }
+
 }

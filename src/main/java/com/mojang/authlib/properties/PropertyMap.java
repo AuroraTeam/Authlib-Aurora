@@ -11,83 +11,70 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+
 import java.lang.reflect.Type;
-import java.util.Iterator;
-import java.util.Map.Entry;
+import java.util.Map;
 
 public class PropertyMap extends ForwardingMultimap<String, Property> {
-   private final Multimap<String, Property> properties = LinkedHashMultimap.create();
+    private final Multimap<String, Property> properties = LinkedHashMultimap.create();
 
-   public PropertyMap() {
-   }
+    @Override
+    protected Multimap<String, Property> delegate() {
+        return properties;
+    }
 
-   protected Multimap<String, Property> delegate() {
-      return this.properties;
-   }
+    public static class Serializer implements JsonSerializer<PropertyMap>, JsonDeserializer<PropertyMap> {
+        @Override
+        public PropertyMap deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException {
+            final PropertyMap result = new PropertyMap();
 
-   public static class Serializer implements JsonSerializer<PropertyMap>, JsonDeserializer<PropertyMap> {
-      public Serializer() {
-      }
+            if (json instanceof JsonObject) {
+                final JsonObject object = (JsonObject) json;
 
-      public PropertyMap deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-         PropertyMap result = new PropertyMap();
-         if (json instanceof JsonObject) {
-            JsonObject object = (JsonObject)json;
-            Iterator var6 = object.entrySet().iterator();
+                for (final Map.Entry<String, JsonElement> entry : object.entrySet()) {
+                    if (entry.getValue() instanceof JsonArray) {
+                        for (final JsonElement element : ((JsonArray) entry.getValue())) {
+                            result.put(entry.getKey(), new Property(entry.getKey(), element.getAsString()));
+                        }
+                    }
+                }
+            } else if (json instanceof JsonArray) {
+                for (final JsonElement element : (JsonArray) json) {
+                    if (element instanceof JsonObject) {
+                        final JsonObject object = (JsonObject) element;
+                        final String name = object.getAsJsonPrimitive("name").getAsString();
+                        final String value = object.getAsJsonPrimitive("value").getAsString();
 
-            while(true) {
-               Entry entry;
-               do {
-                  if (!var6.hasNext()) {
-                     return result;
-                  }
-
-                  entry = (Entry)var6.next();
-               } while(!(entry.getValue() instanceof JsonArray));
-
-               Iterator var8 = ((JsonArray)entry.getValue()).iterator();
-
-               while(var8.hasNext()) {
-                  JsonElement element = (JsonElement)var8.next();
-                  result.put((String) entry.getKey(), new Property((String)entry.getKey(), element.getAsString()));
-               }
+                        if (object.has("signature")) {
+                            result.put(name, new Property(name, value, object.getAsJsonPrimitive("signature").getAsString()));
+                        } else {
+                            result.put(name, new Property(name, value));
+                        }
+                    }
+                }
             }
-         } else if (json instanceof JsonArray) {
-            Iterator var10 = ((JsonArray)json).iterator();
 
-            while(var10.hasNext()) {
-               JsonElement element = (JsonElement)var10.next();
-               if (element instanceof JsonObject) {
-                  JsonObject object = (JsonObject)element;
-                  String name = object.getAsJsonPrimitive("name").getAsString();
-                  String value = object.getAsJsonPrimitive("value").getAsString();
-                  if (object.has("signature")) {
-                     result.put(name, new Property(name, value, object.getAsJsonPrimitive("signature").getAsString()));
-                  } else {
-                     result.put(name, new Property(name, value));
-                  }
-               }
+            return result;
+        }
+
+        @Override
+        public JsonElement serialize(final PropertyMap src, final Type typeOfSrc, final JsonSerializationContext context) {
+            final JsonArray result = new JsonArray();
+
+            for (final Property property : src.values()) {
+                final JsonObject object = new JsonObject();
+
+                object.addProperty("name", property.getName());
+                object.addProperty("value", property.getValue());
+
+                if (property.hasSignature()) {
+                    object.addProperty("signature", property.getSignature());
+                }
+
+                result.add(object);
             }
-         }
 
-         return result;
-      }
-
-      public JsonElement serialize(PropertyMap src, Type typeOfSrc, JsonSerializationContext context) {
-         JsonArray result = new JsonArray();
-
-         JsonObject object;
-         for(Iterator var5 = src.values().iterator(); var5.hasNext(); result.add(object)) {
-            Property property = (Property)var5.next();
-            object = new JsonObject();
-            object.addProperty("name", property.getName());
-            object.addProperty("value", property.getValue());
-            if (property.hasSignature()) {
-               object.addProperty("signature", property.getSignature());
-            }
-         }
-
-         return result;
-      }
-   }
+            return result;
+        }
+    }
 }

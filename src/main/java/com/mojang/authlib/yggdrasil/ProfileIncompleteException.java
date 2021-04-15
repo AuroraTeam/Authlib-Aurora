@@ -1,18 +1,18 @@
 package com.mojang.authlib.yggdrasil;
 
 public class ProfileIncompleteException extends RuntimeException {
-   public ProfileIncompleteException() {
-   }
+    public ProfileIncompleteException() {
+    }
 
-   public ProfileIncompleteException(String message) {
-      super(message);
-   }
+    public ProfileIncompleteException(final String message) {
+        super(message);
+    }
 
-   public ProfileIncompleteException(String message, Throwable cause) {
-      super(message, cause);
-   }
+    public ProfileIncompleteException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
 
-   public ProfileIncompleteException(Throwable cause) {
-      super(cause);
-   }
+    public ProfileIncompleteException(final Throwable cause) {
+        super(cause);
+    }
 }

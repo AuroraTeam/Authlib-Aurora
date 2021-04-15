@@ -4,12 +4,17 @@ import java.util.Set;
 import java.util.UUID;
 
 public class BlockListResponse extends Response {
-   private Set<UUID> blockedProfiles;
+    /*
+    {
+      "blockedProfiles": [
+        "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      ]
+    }
+    */
 
-   public BlockListResponse() {
-   }
+    private Set<UUID> blockedProfiles;
 
-   public Set<UUID> getBlockedProfiles() {
-      return this.blockedProfiles;
-   }
+    public Set<UUID> getBlockedProfiles() {
+        return blockedProfiles;
+    }
 }

@@ -31,117 +31,124 @@ import java.lang.reflect.Type;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.UUID;
-import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nullable;
+
 public class YggdrasilAuthenticationService extends HttpAuthenticationService {
-   private static final Logger LOGGER = LogManager.getLogger();
-   @Nullable
-   private final String clientToken;
-   private final Gson gson;
-   private final Environment environment;
 
-   public YggdrasilAuthenticationService(Proxy proxy) {
-      this(proxy, determineEnvironment());
-   }
+    private static final Logger LOGGER = LogManager.getLogger();
 
-   public YggdrasilAuthenticationService(Proxy proxy, Environment environment) {
-      this(proxy, (String)null, environment);
-   }
+    @Nullable
+    private final String clientToken;
+    private final Gson gson;
+    private final Environment environment;
 
-   public YggdrasilAuthenticationService(Proxy proxy, @Nullable String clientToken) {
-      this(proxy, clientToken, determineEnvironment());
-   }
+    public YggdrasilAuthenticationService(final Proxy proxy) {
+        this(proxy, determineEnvironment());
+    }
 
-   public YggdrasilAuthenticationService(Proxy proxy, @Nullable String clientToken, Environment environment) {
-      super(proxy);
-      this.clientToken = clientToken;
-      this.environment = environment;
-      GsonBuilder builder = new GsonBuilder();
-      builder.registerTypeAdapter(GameProfile.class, new YggdrasilAuthenticationService.GameProfileSerializer());
-      builder.registerTypeAdapter(PropertyMap.class, new PropertyMap.Serializer());
-      builder.registerTypeAdapter(UUID.class, new UUIDTypeAdapter());
-      builder.registerTypeAdapter(ProfileSearchResultsResponse.class, new ProfileSearchResultsResponse.Serializer());
-      this.gson = builder.create();
-      LOGGER.info("Environment: " + environment.asString());
-   }
+    public YggdrasilAuthenticationService(final Proxy proxy, final Environment environment) {
+        this(proxy, null, environment);
+    }
 
-   private static Environment determineEnvironment() {
-      return (Environment)EnvironmentParser.getEnvironmentFromProperties().orElse(YggdrasilEnvironment.PROD);
-   }
+    public YggdrasilAuthenticationService(final Proxy proxy, @Nullable final String clientToken) {
+        this(proxy, clientToken, determineEnvironment());
+    }
 
-   public UserAuthentication createUserAuthentication(Agent agent) {
-      if (this.clientToken == null) {
-         throw new IllegalStateException("Missing client token");
-      } else {
-         return new YggdrasilUserAuthentication(this, this.clientToken, agent, this.environment);
-      }
-   }
+    public YggdrasilAuthenticationService(final Proxy proxy, @Nullable final String clientToken, final Environment environment) {
+        super(proxy);
+        this.clientToken = clientToken;
+        this.environment = environment;
+        final GsonBuilder builder = new GsonBuilder();
+        builder.registerTypeAdapter(GameProfile.class, new GameProfileSerializer());
+        builder.registerTypeAdapter(PropertyMap.class, new PropertyMap.Serializer());
+        builder.registerTypeAdapter(UUID.class, new UUIDTypeAdapter());
+        builder.registerTypeAdapter(ProfileSearchResultsResponse.class, new ProfileSearchResultsResponse.Serializer());
+        gson = builder.create();
+        LOGGER.info("Environment: " + environment.asString());
+    }
 
-   public MinecraftSessionService createMinecraftSessionService() {
-      return new YggdrasilMinecraftSessionService(this, this.environment);
-   }
+    private static Environment determineEnvironment() {
+        return EnvironmentParser
+                   .getEnvironmentFromProperties()
+                   .orElse(YggdrasilEnvironment.PROD);
+    }
 
-   public GameProfileRepository createProfileRepository() {
-      return new YggdrasilGameProfileRepository(this, this.environment);
-   }
+    @Override
+    public UserAuthentication createUserAuthentication(final Agent agent) {
+        if (clientToken == null) {
+            throw new IllegalStateException("Missing client token");
+        }
+        return new YggdrasilUserAuthentication(this, clientToken, agent, environment);
+    }
 
-   protected <T extends Response> T makeRequest(URL url, Object input, Class<T> classOfT) throws AuthenticationException {
-      return this.makeRequest(url, input, classOfT, (String)null);
-   }
+    @Override
+    public MinecraftSessionService createMinecraftSessionService() {
+        return new YggdrasilMinecraftSessionService(this, environment);
+    }
 
-   protected <T extends Response> T makeRequest(URL url, Object input, Class<T> classOfT, @Nullable String authentication) throws AuthenticationException {
-      try {
-         String jsonResult = input == null ? this.performGetRequest(url, authentication) : this.performPostRequest(url, this.gson.toJson(input), "application/json");
-         T result = this.gson.fromJson(jsonResult, classOfT);
-         if (result == null) {
-            return null;
-         } else if (StringUtils.isNotBlank(result.getError())) {
-            if ("UserMigratedException".equals(result.getCause())) {
-               throw new UserMigratedException(result.getErrorMessage());
-            } else if ("ForbiddenOperationException".equals(result.getError())) {
-               throw new InvalidCredentialsException(result.getErrorMessage());
-            } else if ("InsufficientPrivilegesException".equals(result.getError())) {
-               throw new InsufficientPrivilegesException(result.getErrorMessage());
-            } else {
-               throw new AuthenticationException(result.getErrorMessage());
+    @Override
+    public GameProfileRepository createProfileRepository() {
+        return new YggdrasilGameProfileRepository(this, environment);
+    }
+
+    protected <T extends Response> T makeRequest(final URL url, final Object input, final Class<T> classOfT) throws AuthenticationException {
+        return makeRequest(url, input, classOfT, null);
+    }
+
+    protected <T extends Response> T makeRequest(final URL url, final Object input, final Class<T> classOfT, @Nullable final String authentication) throws AuthenticationException {
+        try {
+            final String jsonResult = input == null ? performGetRequest(url, authentication) : performPostRequest(url, gson.toJson(input), "application/json");
+            final T result = gson.fromJson(jsonResult, classOfT);
+
+            if (result == null) {
+                return null;
             }
-         } else {
+
+            if (StringUtils.isNotBlank(result.getError())) {
+                if ("UserMigratedException".equals(result.getCause())) {
+                    throw new UserMigratedException(result.getErrorMessage());
+                } else if ("ForbiddenOperationException".equals(result.getError())) {
+                    throw new InvalidCredentialsException(result.getErrorMessage());
+                } else if ("InsufficientPrivilegesException".equals(result.getError())) {
+                    throw new InsufficientPrivilegesException(result.getErrorMessage());
+                } else {
+                    throw new AuthenticationException(result.getErrorMessage());
+                }
+            }
+
             return result;
-         }
-      } catch (IllegalStateException | JsonParseException | IOException var7) {
-         throw new AuthenticationUnavailableException("Cannot contact authentication server", var7);
-      }
-   }
+        } catch (final IOException | IllegalStateException | JsonParseException e) {
+            throw new AuthenticationUnavailableException("Cannot contact authentication server", e);
+        }
+    }
 
-   public YggdrasilSocialInteractionsService createSocialInteractionsService(String accessToken) throws AuthenticationException {
-      return new YggdrasilSocialInteractionsService(this, accessToken, this.environment);
-   }
+    private static class GameProfileSerializer implements JsonSerializer<GameProfile>, JsonDeserializer<GameProfile> {
+        @Override
+        public GameProfile deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context) throws JsonParseException {
+            final JsonObject object = (JsonObject) json;
+            final UUID id = object.has("id") ? context.<UUID>deserialize(object.get("id"), UUID.class) : null;
+            final String name = object.has("name") ? object.getAsJsonPrimitive("name").getAsString() : null;
+            return new GameProfile(id, name);
+        }
 
-   private static class GameProfileSerializer implements JsonSerializer<GameProfile>, JsonDeserializer<GameProfile> {
-      private GameProfileSerializer() {
-      }
+        @Override
+        public JsonElement serialize(final GameProfile src, final Type typeOfSrc, final JsonSerializationContext context) {
+            final JsonObject result = new JsonObject();
+            if (src.getId() != null) {
+                result.add("id", context.serialize(src.getId()));
+            }
+            if (src.getName() != null) {
+                result.addProperty("name", src.getName());
+            }
+            return result;
+        }
+    }
 
-      public GameProfile deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-         JsonObject object = (JsonObject)json;
-         UUID id = object.has("id") ? (UUID)context.deserialize(object.get("id"), UUID.class) : null;
-         String name = object.has("name") ? object.getAsJsonPrimitive("name").getAsString() : null;
-         return new GameProfile(id, name);
-      }
-
-      public JsonElement serialize(GameProfile src, Type typeOfSrc, JsonSerializationContext context) {
-         JsonObject result = new JsonObject();
-         if (src.getId() != null) {
-            result.add("id", context.serialize(src.getId()));
-         }
-
-         if (src.getName() != null) {
-            result.addProperty("name", src.getName());
-         }
-
-         return result;
-      }
-   }
+    public YggdrasilSocialInteractionsService createSocialInteractionsService(final String accessToken) throws AuthenticationException {
+        return new YggdrasilSocialInteractionsService(this, accessToken, environment);
+    }
 }
