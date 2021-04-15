@@ -65,7 +65,7 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
     protected YggdrasilMinecraftSessionService(final YggdrasilAuthenticationService service, final Environment env) {
         super(service);
 
-        LOGGER.info("Aurora authlib loaded!");
+        LOGGER.info("[AuthLib]: <YggdrasilAuthenticationService> load!");
 
         baseUrl = env.getSessionHost() + "/session/minecraft/";
 
@@ -83,6 +83,8 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
 
     @Override
     public void joinServer(final GameProfile profile, final String authenticationToken, final String serverId) throws AuthenticationException {
+        LOGGER.info("[AuthLib]: <joinServer> load!");
+
         final JoinMinecraftServerRequest request = new JoinMinecraftServerRequest();
         request.accessToken = authenticationToken;
         request.selectedProfile = profile.getId();
@@ -93,6 +95,8 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
 
     @Override
     public GameProfile hasJoinedServer(final GameProfile user, final String serverId, final InetAddress address) throws AuthenticationUnavailableException {
+        LOGGER.info("[AuthLib]: <hasJoinedServer> load!");
+
         final Map<String, Object> arguments = new HashMap<String, Object>();
 
         arguments.put("username", user.getName());
@@ -127,6 +131,7 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
 
     @Override
     public Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> getTextures(final GameProfile profile, final boolean requireSecure) {
+        LOGGER.info("[AuthLib]: <getTextures> load!");
         final Property textureProperty = Iterables.getFirst(profile.getProperties().get("textures"), null);
 
         if (textureProperty == null) {
@@ -146,7 +151,7 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
                 throw new InsecureTextureException("Textures payload has been tampered with (signature invalid)");
             }
         }
-         */
+        */
 
         final MinecraftTexturesPayload result;
         try {
@@ -185,6 +190,7 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
     }
 
     protected GameProfile fillGameProfile(final GameProfile profile, final boolean requireSecure) {
+        LOGGER.info("[AuthLib]: <fillGameProfile> load!");
         try {
             URL url = HttpAuthenticationService.constantURL(baseUrl + "profile/" + UUIDTypeAdapter.fromUUID(profile.getId()));
             url = HttpAuthenticationService.concatenateURL(url, "unsigned=" + !requireSecure);
