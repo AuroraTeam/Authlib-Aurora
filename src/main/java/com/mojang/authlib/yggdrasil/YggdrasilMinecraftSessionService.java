@@ -46,7 +46,6 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
         ".mojang.com",
         System.getProperty("minecraft.api.skins.domain")
     };
-
     private static final Logger LOGGER = LogManager.getLogger();
     private final String baseUrl;
     private final URL joinUrl;

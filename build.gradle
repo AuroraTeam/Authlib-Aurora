@@ -4,9 +4,9 @@ apply plugin: "signing"
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-group 'ru.keeperjerry.authlib'
+group 'ru.aurorateam.authlib'
 archivesBaseName = 'authlib'
-version = '2.1.28'
+version = '2.2.30'
 
 configurations {
     provided {
@@ -26,9 +26,9 @@ dependencies {
     provided("commons-codec:commons-codec:1.10")
     provided("commons-io:commons-io:2.5")
     provided("org.apache.commons:commons-lang3:3.5")
-    provided("org.apache.logging.log4j:log4j-core:2.0-beta9")
+    provided("org.apache.logging.log4j:log4j-core:2.14.1")
     provided("com.google.code.findbugs:jsr305:3.0.2")
-    annotationProcessor("org.apache.logging.log4j:log4j-core:2.0-beta9")
+    annotationProcessor("org.apache.logging.log4j:log4j-core:2.14.1")
 }
 
 jar {
