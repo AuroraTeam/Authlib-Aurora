@@ -218,9 +218,9 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
 
         final String domain = uri.getHost();
 
-        for (int i = 0; i < WHITELISTED_DOMAINS.length; i++) {
-            if (WHITELISTED_DOMAINS[i] == null) continue;
-            if (domain.endsWith(WHITELISTED_DOMAINS[i])) {
+        for (String whitelistedDomain : WHITELISTED_DOMAINS) {
+            if (whitelistedDomain == null || whitelistedDomain.isEmpty()) continue;
+            if (domain.endsWith(whitelistedDomain)) {
                 return true;
             }
         }
