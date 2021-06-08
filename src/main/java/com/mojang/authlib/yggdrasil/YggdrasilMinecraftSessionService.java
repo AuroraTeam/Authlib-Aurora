@@ -41,11 +41,17 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionService {
-    private static final String[] WHITELISTED_DOMAINS = {
+    private static final String[] ALLOWED_DOMAINS = {
         ".minecraft.net",
         ".mojang.com",
         System.getProperty("minecraft.api.skins.domain")
     };
+
+    private static final String[] BLOCKED_DOMAINS = {
+        "education.minecraft.net",
+        "bugs.mojang.com",
+    };
+
     private static final Logger LOGGER = LogManager.getLogger();
     private final String baseUrl;
     private final URL joinUrl;
@@ -158,9 +164,10 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
         }
 
         for (final Map.Entry<MinecraftProfileTexture.Type, MinecraftProfileTexture> entry : result.getTextures().entrySet()) {
-            if (!isWhitelistedDomain(entry.getValue().getUrl())) {
-                LOGGER.error("Textures payload has been tampered with (non-whitelisted domain)");
-                return new HashMap<MinecraftProfileTexture.Type, MinecraftProfileTexture>();
+            final String url = entry.getValue().getUrl();
+            if (!isAllowedTextureDomain(url)) {
+                LOGGER.error("Textures payload contains blocked domain: {}", url);
+                return new HashMap<>();
             }
         }
 
@@ -207,8 +214,8 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
         return (YggdrasilAuthenticationService) super.getAuthenticationService();
     }
 
-    private static boolean isWhitelistedDomain(final String url) {
-        URI uri = null;
+    private static boolean isAllowedTextureDomain(final String url) {
+        URI uri;
 
         try {
             uri = new URI(url);
@@ -217,10 +224,13 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
         }
 
         final String domain = uri.getHost();
+        return isDomainOnList(domain, ALLOWED_DOMAINS) && !isDomainOnList(domain, BLOCKED_DOMAINS);
+    }
 
-        for (String whitelistedDomain : WHITELISTED_DOMAINS) {
-            if (whitelistedDomain == null || whitelistedDomain.isEmpty()) continue;
-            if (domain.endsWith(whitelistedDomain)) {
+    private static boolean isDomainOnList(final String domain, final String[] list) {
+        for (final String entry : list) {
+        	if (entry == null || entry.isEmpty()) continue;
+            if (domain.endsWith(entry)) {
                 return true;
             }
         }

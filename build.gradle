@@ -4,9 +4,9 @@ apply plugin: "signing"
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-group 'ru.aurorateam.authlib'
+group 'ru.aurorateam'
 archivesBaseName = 'authlib'
-version = '2.2.30'
+version = '2.3.31'
 
 configurations {
     provided {
