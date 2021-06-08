@@ -44,7 +44,7 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
     private static final String[] ALLOWED_DOMAINS = {
         ".minecraft.net",
         ".mojang.com",
-        System.getProperty("minecraft.api.skins.domain")
+        System.getProperty("minecraft.api.skins.domain", "")
     };
 
     private static final String[] BLOCKED_DOMAINS = {
@@ -229,7 +229,7 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
 
     private static boolean isDomainOnList(final String domain, final String[] list) {
         for (final String entry : list) {
-        	if (entry == null || entry.isEmpty()) continue;
+        	if (entry.isEmpty()) continue;
             if (domain.endsWith(entry)) {
                 return true;
             }
